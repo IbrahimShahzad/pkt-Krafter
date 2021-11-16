@@ -14,23 +14,31 @@ class BaseClass:
         o3 = int(ipnum / 256) % 256
         o4 = int(ipnum) % 256
         return '%(o1)s.%(o2)s.%(o3)s.%(o4)s' % locals()
+    
+    def mac_to_bytes(self,mac:str)->bytes:
+        delim = ':'
+        if len(mac) != 17:
+            raise Exception('MAC Address Invalid Length')
+        if delim not in mac:
+            raise Exception('MAC Address should contain delimeter ":" ')
+        return ("".join(mac.split(':'))).encode()
 
 class Ip(BaseClass):
     def __init__(
             self,
-            version=4,
-            ttl_length=5,
-            type_of_service=252,
-            total_length=194,
-            identification=33683,
-            flags=0,
-            fragment_offset=0,
-            ttl=247,
-            protocol=17,
-            header_checksum =32147,
-            source_address = "10.65.139.49",
-            destination_address="10.180.32.226",
-            encoding='big') -> None:
+            version:int = 4,
+            ttl_length:int =5,
+            type_of_service:int =252,
+            total_length:int =194,
+            identification:int =33683,
+            flags:int =0,
+            fragment_offset:int=0,
+            ttl:int=247,
+            protocol:int=17,
+            header_checksum:int =32147,
+            source_address:str = "10.65.139.49",
+            destination_address:str="10.180.32.226",
+            encoding:str='big') -> None:
         self.verToS  = self.get_version_bytes(version=version,total_length=ttl_length)              # Version, IHL, Type of Service | Total Length
         self.type_of_service=type_of_service.to_bytes(1,encoding)  # Differentiated Services Field
         self.total_length=total_length.to_bytes(2,encoding)
@@ -75,11 +83,11 @@ class Ip(BaseClass):
 class Tcp:
     pass
 
-class Ethernet:
-    def __init__(self) -> None:
-        self.destination = b'\x00\x0c\x29\x88\xe5\x81'
-        self.source = b'\x30\x29\x52\x36\x7b\x2c'
-        self.type = b'\x08\x00'
+class Ethernet(BaseClasss):
+    def __init__(self,source_mac_address:str='00:00:5e:00:53:af',destination_mac_address:str='00:00:5e:00:53:af',ethernet_type:int=2048,encoding:str='big') -> None:
+        self.source = super().mac_to_bytes(source_mac_address)              # b'\x30\x29\x52\x36\x7b\x2c'
+        self.destination = super().mac_to_bytes(destination_mac_address)    # b'\x00\x0c\x29\x88\xe5\x81'
+        self.type = ethernet_type.to_bytes(2,encoding)                      # b'\x08\x00'
         return
 
 class udp_header:
