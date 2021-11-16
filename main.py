@@ -83,7 +83,7 @@ class Ip(BaseClass):
 class Tcp:
     pass
 
-class Ethernet(BaseClasss):
+class Ethernet(BaseClass):
     def __init__(self,source_mac_address:str='00:00:5e:00:53:af',destination_mac_address:str='00:00:5e:00:53:af',ethernet_type:int=2048,encoding:str='big') -> None:
         self.source = super().mac_to_bytes(source_mac_address)              # b'\x30\x29\x52\x36\x7b\x2c'
         self.destination = super().mac_to_bytes(destination_mac_address)    # b'\x00\x0c\x29\x88\xe5\x81'
@@ -104,6 +104,6 @@ def func():
     s.setsockopt(socket.IPPROTO_IP,socket.IP_HDRINCL,1)
 
 
-s=Packet()
-s.create_ip_header()
-print(s.ip_header)
+#s=Packet()
+#s.create_ip_header()
+#print(s.ip_header)
