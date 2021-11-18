@@ -4,8 +4,8 @@ from sys import version
 class BaseClass:
     def ip_to_int(self,ip:str)->int:
         """ Converts an IP from string to integer form """
-        o = list(map(int, ip.split('.')))
-        return (16777216 * o[0]) + (65536 * o[1]) + (256 * o[2]) + o[3]
+        ip_oct = list(map(int, ip.split('.')))
+        return (16777216 * ip_oct[0]) + (65536 * ip_oct[1]) + (256 * ip_oct[2]) + ip_oct[3]
     
     def ip_to_string(self,ip:int)->str:
         """ Converts an IP from integer to string form """
