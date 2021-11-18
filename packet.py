@@ -49,7 +49,7 @@ class Ip(BaseClass):
         self.header_checksum = header_checksum.to_bytes(2,encoding)# b'\x7d\x93'  # Destination Address
         self.source_addr = super().ip_to_int(source_address).to_bytes(4,encoding)# b'\x0a\x41\x8b\x31'  # Destination Address
         self.destination_address = super().ip_to_int(destination_address).to_bytes(4,encoding) #b'\x0a\xb4\x20\xe2'  # Destination Address
-        print("init ip")
+        #print("init ip")
         return
     
     def create_ip_header(self)->bytes:
@@ -104,7 +104,7 @@ class Udp:
                 length=1240,
                 checksum=0,
                 encoding='big') -> None:
-        print("init udp")
+        #print("init udp")
         self.source_port = source_port.to_bytes(2,encoding)
         self.destination_port = destination_port.to_bytes(2,encoding)
         self.length = length.to_bytes(2,encoding)
@@ -129,35 +129,88 @@ class Udp:
 class Ethernet(BaseClass):
     def __init__(self,
                 source_mac_address:str='00:00:5e:00:53:af',
-                destination_mac_address:str='00:00:5e:00:53:af',
+                destination_mac_address:str='30:29:52:36:7b:2c',
                 ethernet_type:int=2048,
                 encoding:str='big') -> None:
-        self.source = super().mac_to_bytes(source_mac_address)              # b'\x30\x29\x52\x36\x7b\x2c'
-        self.destination = super().mac_to_bytes(destination_mac_address)    # b'\x00\x0c\x29\x88\xe5\x81'
-        self.type = ethernet_type.to_bytes(2,encoding)                      # b'\x08\x00'
+        self.destination_mac = super().mac_to_bytes(destination_mac_address)    # b'\x00\x0c\x29\x88\xe5\x81'
+        self.source_mac = super().mac_to_bytes(source_mac_address)              # b'\x30\x29\x52\x36\x7b\x2c'
+        self.type_n = ethernet_type.to_bytes(2,encoding)                      # b'\x08\x00'
         return
 
+    def create_ethernet_header(self)->bytes:
+        """ Creates and returns an IP Header by appending all the IP layer attributes """
+        print("creating ethernet header")
+        self.ethernet_header=b''
+        attribute_names = [
+            'destination_mac',
+            'source_mac',
+            'type_n',
+        ]
+        for attr in attribute_names:
+            self.ethernet_header += self.__getattribute__(attr)
+        return self.ethernet_header
 
-class Packet(Udp,Ip):
+
+
+class Packet(Ethernet, Udp, Ip):
     def __init__(self) -> None:
         Udp.__init__(self)
         Ip.__init__(self)
-        #super(Ip).__init__()
+        Ethernet.__init__(self)
 
-    def create_udp_packet(self)->bytes:
+    def create_udp_packet_def(self)->bytes:
         udp = super().create_udp_header()
         ip = super().create_ip_header()
         return udp + ip
+    
+    def create_udp_packet(self)->bytes:
+        ethernet = super().create_ethernet_header()
+        udp = super().create_udp_header()
+        ip = super().create_ip_header()
+        return ethernet + ip + udp
+ 
+    def create_tcp_packet(self)->bytes:
+        """ TODO: create tcp packet """
+        ethernet  = b'\x00\x0c\x29\xd3\xbe\xd6' # MAC Address Destination
+        ethernet += b'\x00\x0c\x29\xe0\xc4\xaf' # MAC Address Source
+        ethernet += b'\x08\x00'                 # Protocol-Type: IPv4
+        tcp = b'\x30\x39\x00\x50' # Source Port | Destination Port
+        tcp+= b'\x00\x00\x00\x00' # Sequence Number
+        tcp+= b'\x00\x00\x00\x00' # Acknowledgement Number
+        tcp+= b'\x50\x02\x71\x10' # Data Offset, Reserved, Flags | Window Size
+        tcp+= b'\xe6\x32\x00\x00' # Checksum | Urgent Pointer
+        ip = super().create_ip_header()
+        return ethernet + tcp + ip
+
+
+    def set_option(self,protocol:str)->int:
+        """ Set transport layer option """
+        if protocol.lower() == 'udp':
+            return socket.IPPROTO_UDP
+        elif protocol.lower() == 'tcp':
+            return socket.IPPROTO_TCP
+        else:
+            raise Exception("Invalid protocol, Use 'udp' or tcp")
+
+    def send_simple_ip_packet(self,
+                        packet,
+                        interface:str="eth0")->bool:
+        s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
+        s.bind((interface, 0))
+        s.send(packet)
+        return True
+    
+
 
 def func():
     sample_packet=Packet()
     print(dir(sample_packet))
     print(sample_packet.create_udp_packet())
-    s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_UDP)
-    #s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_TCP)
-    s.setsockopt(socket.IPPROTO_IP,socket.IP_HDRINCL,1)
-    #packet = ip_header + tcp_header
-    s.sendto(sample_packet, ('10.10.10.1', 0))
+    print(sample_packet.send_simple_ip_packet(sample_packet.create_udp_header()))
+    #s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_UDP)
+    #s.setsockopt(socket.IPPROTO_IP,socket.IP_HDRINCL,1)
+    ##packet = ip_header + tcp_header
+    #s.sendto(sample_packet, ('10.10.10.1', 0))
 
 if __name__=="__main__":
     func()
